@@ -19,7 +19,9 @@ our `spring-testing-demo` project.
 
 ## Model
 
-Sticking with the cat theme, let's model a cat rescue! Consider the following ER
+Sticking with the cat theme, let's model a cat rescue! For clarification, we
+will model a cat rescue as in the place, like an animal shelter for cats
+rather than an action or event of rescuing a cat. Consider the following ER
 diagram:
 
 ![cat-ER-diagram](https://curriculum-content.s3.amazonaws.com/spring-mod-2/testing/cat-rescue-er-diagram.png)
@@ -563,6 +565,77 @@ public class RescueController {
 }
 ```
 
+## Testing the Application
+
+Whew! That was a lot of code we just added. Before we get into unit testing
+again, let us make sure our application is working as expected and to refresh
+our memories on manual testing. For this, we'll use our friend, Postman, again.
+
+Start up the application and open up Postman.
+
+First, we will need to add a rescue to the data source before we can do anything
+else. In the request URL, enter "http://localhost:8080/rescue" and make sure
+that the request type is POST. We will also want to check the "Headers" tab to
+ensure that "Content-Type:application/json" is included. In the body tab, click
+the "raw" radio button and select "JSON" from the dropdown. Let's add the
+following rescue:
+
+```json
+{
+  "name": "Happy-Cats",
+  "address": "100 Main Street",
+  "city": "Manitou Springs",
+  "state": "Colorado",
+  "websiteUrl": "https://happycatshaven.org/",
+  "phoneNumber": "555-123-4567"
+}
+```
+
+Click "Send" to send the request to our API. Ensure the result looks like the
+screenshot below:
+
+![postman-add-rescue](https://curriculum-content.s3.amazonaws.com/spring-mod-2/testing/postman-add-rescue.png)
+
+We can even check pgAdmin4 to make sure that the rescue has been persisted:
+
+![pgadmin-select-all-rescue](https://curriculum-content.s3.amazonaws.com/spring-mod-2/testing/pgadmin-select-all-rescue.png)
+
+Now let's test the GET method in the `RescueController`. In Postman, change the
+request type to GET and the request URL to: 
+http://localhost:8080/rescue/Happy-Cats". Then click "Send" and ensure the
+response looks like this:
+
+![postman-get-rescue](https://curriculum-content.s3.amazonaws.com/spring-mod-2/testing/postman-get-rescue.png)
+
+Great! Now that we have a rescue entity we can add some cats!
+
+Change the request type to POST and the request URL to:
+"http://localhost:8080/cat". In the body tab, we'll add the following cat:
+
+```json
+{
+  "name": "Silky",
+  "breed": "Domestic Short Hair",
+  "age": 1,
+  "rescueId": 1
+}
+```
+
+Click "Send" to save the cat to the database:
+
+![postman-add-cat](https://curriculum-content.s3.amazonaws.com/spring-mod-2/testing/postman-add-cat.png)
+
+Let's look to see if we persisted the cat to the database in pgAdmin4:
+
+![pgadmin-select-all-cat](https://curriculum-content.s3.amazonaws.com/spring-mod-2/testing/pgadmin-select-all-cat.png)
+
+We'll test to make sure we can retrieve the cat now from the database. In
+Postman, change the request type to GET and the request URL to:
+"http://localhost:8080/cat/2". Then click "Send" and ensure the response looks
+like this:
+
+![postman-get-cat](https://curriculum-content.s3.amazonaws.com/spring-mod-2/testing/postman-get-cat.png)
+
 ## Unit Testing and Spring Data
 
 When it comes to writing unit tests with Spring Data, we still want to remove
@@ -742,9 +815,12 @@ class CatControllerUnitTest {
 }
 ```
 
-And that's really it! Simple enough, right? Go ahead and try to write the unit
-test class for the `RescueController` on your own! Name the unit test class:
-`RescueControllerUnitTest`.
+And that's really it! Simple enough, right? Run the unit test and ensure it
+passes.
+
+Go ahead and try to write the unit test class for the `RescueController` on your
+own! Name the unit test class:`RescueControllerUnitTest`. Once you've written
+the unit test, try running it and making sure that it passes.
 
 ## Integration Testing and Spring Data
 
@@ -758,9 +834,40 @@ Instead, we'll connect our tests to an in-memory database, like an H2 database.
 This will self-contain the persistence testing. To learn more about H2
 databases, see [H2 Database Engine](https://www.h2database.com/html/main.html).
 
+To use the H2 database, we'll need to add this dependency to our `pom.xml` file:
+
+```xml
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+```
+
+Make sure to add the dependency within the `<dependencies>` section. Also
+remember to click the Maven icon in the upper-right to reload the changes.
+
 Let's create an `application-test.properties` file. In the test directory,
-create the `resources` directory and then add the `application-test.properties`
-file with the following content:
+create the `resources` directory and then an `application-test.properties` file:
+
+```text
+    └── test
+        ├── java
+        │   └── org
+        │        └── example
+        │             └── springtestingdemo
+        │                   ├── SpringTestingDemoApplicationTests.java
+        │                   └──controller
+        │                       ├──CatControllerUnitTest.java
+        │                       ├──DemoControllerAcceptanceTest.java
+        │                       ├──DemoControllerIntegrationTest.java
+        │                       ├──DemoControllerUnitTest.java
+        │                       └──RescueControllerUnitTest.java                     
+        └── resources
+             └── application-test.properties        
+```
+
+Add the following content to the `application-test.properties` file:
 
 ```properties
 spring.datasource.url = jdbc:h2:mem:test
@@ -997,7 +1104,7 @@ class CatRepositoryIntegrationTest {
 
 
   @Test
-  void testSave() {
+  void save() {
     assertEquals(testCat, catRepository.save(testCat));
   }
 }
@@ -1062,12 +1169,12 @@ class CatRepositoryIntegrationTest {
 
 
     @Test
-    void testSave() {
+    void save() {
         assertEquals(testCat, catRepository.save(testCat));
     }
 
     @Test
-    void testFindById() {
+    void findById() {
 
         // First save the cat in the repository
         catRepository.save(testCat);
@@ -1142,12 +1249,12 @@ class CatRepositoryIntegrationTest {
 
 
     @Test
-    void testSave() {
+    void save() {
         assertEquals(testCat, catRepository.save(testCat));
     }
 
     @Test
-    void testFindById() {
+    void findById() {
 
         // First save the cat in the repository
         catRepository.save(testCat);
@@ -1171,7 +1278,9 @@ Name the test class `RescueRepositoryIntegrationTest`.
 Moving onto acceptance testing. In our acceptance tests with Spring Data, we
 want to test all of our endpoints in our cat rescue model by initializing the
 entire Spring Framework. We'll go ahead and create a test class called
-`CatRescueAcceptanceTest` in our `com.example.springtestingdemo` package:
+`CatRescueAcceptanceTest` in our `com.example.springtestingdemo` package. For
+this particular test, we will _not_ generate the test like we did before since
+this test will encompass testing the `CatController` and the `RescueController`.
 
 ```java
 package com.example.springtestingdemo;
@@ -1363,6 +1472,7 @@ package com.example.springtestingdemo;
 
 import com.example.springtestingdemo.dto.CatDTO;
 import com.example.springtestingdemo.dto.RescueDTO;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -1463,7 +1573,12 @@ Let's break down what is happening in the `addRescue()` test method:
   status `String` object that is returned.
 
 Run the test and ensure that everything works before moving onto writing the
-test code for the `getRescue()` test method:
+test code for the `getRescue()` test method.
+
+We will also use the `ObjectMapper` now in both of our test methods thus far.
+So, we can move that up to the `setUp()` method instead to instantiate. Consider
+the following code changes:
+
 
 ```java
 package com.example.springtestingdemo;
@@ -1564,10 +1679,6 @@ class CatRescueAcceptanceTest {
   }
 }
 ```
-
-So the first thing we changed was we noticed we use the `ObjectMapper` in both
-of our test methods thus far. Let's move that up to the `setUp()` method instead
-to instantiate.
 
 In the `getRescue()` test method, we will get a JSON back in response. This
 JSON should just be the serialized version of the `testRescue` that we created
@@ -1742,7 +1853,7 @@ Consider the following points regarding the last two methods:
   will set the `rescueName` in the following line and then compare the `testCat`
   and `catDTO` objects.
 
-## Check the Project Structure:
+## Check the Project Structure
 
 ```text
 ├── HELP.md
@@ -1779,25 +1890,25 @@ Consider the following points regarding the last two methods:
     │       ├── static
     │       └── templates
     └── test
-        └── java
-            └── org
-                └── example
-                    └── springtestingdemo
-                        ├── CatRescueAcceptanceTest.java
-                        ├── SpringTestingDemoApplicationTests.java
-                        ├──controller
-                        │  ├──CatControllerIntegrationTest.java
-                        │  ├──CatControllerUnitTest.java
-                        │  ├──DemoControllerAcceptanceTest.java
-                        │  ├──DemoControllerIntegrationTest.java
-                        │  ├──DemoControllerUnitTest.java
-                        │  ├──RescueControllerIntegrationTest.java
-                        │  └──RescueControllerUnitTest.java
-                        ├──repository
-                        │  ├──CatRepositoryIntegrationTest.java
-                        │  ├──RescueRepositoryIntegrationTest.java                        
-                        └── service
-                            └── CatFactServiceIntegrationTest.java
+        ├── java
+        │   └── org
+        │        └── example
+        │             └── springtestingdemo
+        │                   ├── CatRescueAcceptanceTest.java
+        │                   ├── SpringTestingDemoApplicationTests.java
+        │                   ├──controller
+        │                   │  ├──CatControllerIntegrationTest.java
+        │                   │  ├──CatControllerUnitTest.java
+        │                   │  ├──DemoControllerAcceptanceTest.java
+        │                   │  ├──DemoControllerIntegrationTest.java
+        │                   │  ├──DemoControllerUnitTest.java
+        │                   │  ├──RescueControllerIntegrationTest.java
+        │                   │  └──RescueControllerUnitTest.java
+        │                   └──repository
+        │                        ├──CatRepositoryIntegrationTest.java
+        │                        └──RescueRepositoryIntegrationTest.java                        
+        └── resources
+             └── application-test.properties        
 ```
 
 Note: The `CatControllerIntegrationTest` and the
@@ -1808,6 +1919,16 @@ integration tests. The `RescueControllerUnitTest` and the
 own!
 
 ## Conclusion
+
+Let's remember:
+
+- **Unit testing** is a specific kind of testing that focuses on validating the
+  functionality of a single component of the system. It tests a small, specific
+  piece of functionality.
+- **Integration testing** is a type of testing that looks at multiple components
+  of a program and tests how well these modules may work together.
+- **Acceptance testing** is ensures that all the layers of an API are tested and
+  functions the way it is expected by the end users.
 
 As we can see, the integration tests and acceptance test can be a little more
 complicated when we add Spring Data into the mix. In this lessson, we learned
