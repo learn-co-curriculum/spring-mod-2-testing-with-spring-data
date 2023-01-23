@@ -1927,7 +1927,7 @@ Let's remember:
   piece of functionality.
 - **Integration testing** is a type of testing that looks at multiple components
   of a program and tests how well these modules may work together.
-- **Acceptance testing** is ensures that all the layers of an API are tested and
+- **Acceptance testing** ensures that all the layers of an API are tested and
   functions the way it is expected by the end users.
 
 As we can see, the integration tests and acceptance test can be a little more
